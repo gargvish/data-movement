@@ -11,7 +11,11 @@ CREATE TABLE IF NOT EXISTS silver.vehicle (
     silver_updated_at  TIMESTAMP NOT NULL
 )
 USING iceberg
-PARTITIONED BY (tenant_id);
+PARTITIONED BY (tenant_id)
+TBLPROPERTIES (
+    'write.metadata.delete-after-commit.enabled' = 'true',
+    'write.metadata.previous-versions-max'       = '3'
+);
 
 CREATE TABLE IF NOT EXISTS silver.registration (
     tenant_id           INT       NOT NULL,
@@ -24,7 +28,11 @@ CREATE TABLE IF NOT EXISTS silver.registration (
     silver_updated_at   TIMESTAMP NOT NULL
 )
 USING iceberg
-PARTITIONED BY (tenant_id);
+PARTITIONED BY (tenant_id)
+TBLPROPERTIES (
+    'write.metadata.delete-after-commit.enabled' = 'true',
+    'write.metadata.previous-versions-max'       = '3'
+);
 
 CREATE TABLE IF NOT EXISTS silver.payment (
     tenant_id          INT            NOT NULL,
@@ -36,4 +44,8 @@ CREATE TABLE IF NOT EXISTS silver.payment (
     silver_updated_at  TIMESTAMP      NOT NULL
 )
 USING iceberg
-PARTITIONED BY (tenant_id);
+PARTITIONED BY (tenant_id)
+TBLPROPERTIES (
+    'write.metadata.delete-after-commit.enabled' = 'true',
+    'write.metadata.previous-versions-max'       = '3'
+);

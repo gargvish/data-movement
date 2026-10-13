@@ -10,7 +10,11 @@ CREATE TABLE IF NOT EXISTS gold.daily_registrations (
     computed_at        TIMESTAMP NOT NULL
 )
 USING iceberg
-PARTITIONED BY (tenant_id);
+PARTITIONED BY (tenant_id)
+TBLPROPERTIES (
+    'write.metadata.delete-after-commit.enabled' = 'true',
+    'write.metadata.previous-versions-max'       = '3'
+);
 
 -- Current revenue per tenant from live (non-deleted) payments linked
 -- to live registrations.
@@ -20,7 +24,11 @@ CREATE TABLE IF NOT EXISTS gold.tenant_revenue (
     payment_count   BIGINT          NOT NULL,
     computed_at     TIMESTAMP       NOT NULL
 )
-USING iceberg;
+USING iceberg
+TBLPROPERTIES (
+    'write.metadata.delete-after-commit.enabled' = 'true',
+    'write.metadata.previous-versions-max'       = '3'
+);
 
 -- One row per currently-active vehicle (vehicle not deleted + registration
 -- status ACTIVE + registration not deleted). Dimension-style snapshot.
@@ -36,4 +44,8 @@ CREATE TABLE IF NOT EXISTS gold.active_vehicles (
     computed_at          TIMESTAMP NOT NULL
 )
 USING iceberg
-PARTITIONED BY (tenant_id);
+PARTITIONED BY (tenant_id)
+TBLPROPERTIES (
+    'write.metadata.delete-after-commit.enabled' = 'true',
+    'write.metadata.previous-versions-max'       = '3'
+);

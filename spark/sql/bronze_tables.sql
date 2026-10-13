@@ -15,7 +15,11 @@ CREATE TABLE IF NOT EXISTS bronze.vehicle_cdc (
     kafka_offset    BIGINT
 )
 USING iceberg
-PARTITIONED BY (tenant_id);
+PARTITIONED BY (tenant_id)
+TBLPROPERTIES (
+    'write.metadata.delete-after-commit.enabled' = 'true',
+    'write.metadata.previous-versions-max'       = '3'
+);
 
 CREATE TABLE IF NOT EXISTS bronze.registration_cdc (
     op              STRING,
@@ -32,7 +36,11 @@ CREATE TABLE IF NOT EXISTS bronze.registration_cdc (
     kafka_offset    BIGINT
 )
 USING iceberg
-PARTITIONED BY (tenant_id);
+PARTITIONED BY (tenant_id)
+TBLPROPERTIES (
+    'write.metadata.delete-after-commit.enabled' = 'true',
+    'write.metadata.previous-versions-max'       = '3'
+);
 
 CREATE TABLE IF NOT EXISTS bronze.payment_cdc (
     op              STRING,
@@ -49,4 +57,8 @@ CREATE TABLE IF NOT EXISTS bronze.payment_cdc (
     kafka_offset    BIGINT
 )
 USING iceberg
-PARTITIONED BY (tenant_id);
+PARTITIONED BY (tenant_id)
+TBLPROPERTIES (
+    'write.metadata.delete-after-commit.enabled' = 'true',
+    'write.metadata.previous-versions-max'       = '3'
+);
