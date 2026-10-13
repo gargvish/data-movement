@@ -81,6 +81,79 @@ services:
       timeout: 5s
       retries: 15
 
+  rustfs:
+    image: rustfs/rustfs:latest
+    container_name: dm-rustfs
+    environment:
+      RUSTFS_ACCESS_KEY: rustfsadmin
+      RUSTFS_SECRET_KEY: rustfsadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - rustfs-data:/data
+
+  rustfs-init:
+    image: amazon/aws-cli:latest
+    container_name: dm-rustfs-init
+    depends_on:
+      - rustfs
+    environment:
+      AWS_ACCESS_KEY_ID: rustfsadmin
+      AWS_SECRET_ACCESS_KEY: rustfsadmin
+      AWS_DEFAULT_REGION: us-east-1
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        until aws --endpoint-url http://rustfs:9000 s3 ls >/dev/null 2>&1; do
+          echo 'waiting for rustfs...'; sleep 2;
+        done
+        aws --endpoint-url http://rustfs:9000 s3 mb s3://warehouse || true
+        aws --endpoint-url http://rustfs:9000 s3 ls
+    restart: "no"
+
+  iceberg-rest:
+    image: tabulario/iceberg-rest:1.6.0
+    container_name: dm-iceberg-rest
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rustfs-init:
+        condition: service_completed_successfully
+    ports:
+      - "8181:8181"
+    environment:
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: rustfsadmin
+      AWS_SECRET_ACCESS_KEY: rustfsadmin
+      CATALOG_WAREHOUSE: s3://warehouse/
+      CATALOG_IO__IMPL: org.apache.iceberg.aws.s3.S3FileIO
+      CATALOG_S3_ENDPOINT: http://rustfs:9000
+      CATALOG_S3_PATH__STYLE__ACCESS: "true"
+      CATALOG_CATALOG__IMPL: org.apache.iceberg.jdbc.JdbcCatalog
+      CATALOG_URI: jdbc:postgresql://postgres:5432/iceberg_catalog
+      CATALOG_JDBC_USER: iceberg
+      CATALOG_JDBC_PASSWORD: iceberg
+
+  spark:
+    image: apache/spark:3.5.3
+    container_name: dm-spark
+    user: root
+    depends_on:
+      kafka:
+        condition: service_healthy
+      iceberg-rest:
+        condition: service_started
+    entrypoint: ["bash", "-c", "tail -f /dev/null"]
+    volumes:
+      - ./spark/conf:/opt/spark/conf:ro
+      - ./spark/jobs:/opt/spark/jobs:ro
+      - ./spark/sql:/opt/spark/sql:ro
+      - spark-ivy:/root/.ivy2
+
 volumes:
   postgres-data:
   kafka-data:
+  rustfs-data:
+  spark-ivy:
